@@ -14,4 +14,6 @@ dependencies:
   - scipy
   - torchvision
   - pytorch
+  - shapely
+  - tensorboardx
 prefix: ~/.conda/envs/textsnake
