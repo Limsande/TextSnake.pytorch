@@ -11,6 +11,7 @@ from util.shedule import FixLR
 
 from dataset.total_text import TotalText
 from dataset.synth_text import SynthText
+from dataset.eco2018 import Eco2018
 from network.loss import TextLoss
 from network.textnet import TextNet
 from util.augmentation import BaseTransform, Augmentation
@@ -185,6 +186,11 @@ def main():
             transform=Augmentation(size=cfg.input_size, mean=cfg.means, std=cfg.stds)
         )
         valset = None
+    elif cfg.dataset == 'eco2018':
+        trainset = Eco2018(is_training=True)
+
+        # TODO wie zwischen val und test unterscheiden ?!
+        valset = Eco2018(is_training=False)
     else:
         pass
 
