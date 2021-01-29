@@ -16,8 +16,6 @@ class Eco2018(RootDataset):
     def __init__(
             self,
             data_root='data/Eco2018',
-            # ???
-            ignore_list=None,
             is_training=True,
             # ???
             transform=True):
@@ -28,19 +26,10 @@ class Eco2018(RootDataset):
 
         self._annotation_names = ['roots', 'centerline', 'radius', 'sin', 'cos']
 
-        if ignore_list:
-            with open(ignore_list) as f:
-                ignore_list = f.readlines()
-                ignore_list = [line.strip() for line in ignore_list]
-        else:
-            ignore_list = []
-
         self.image_root = os.path.join(data_root, 'images', 'training' if is_training else 'test')
         self.annotation_root = os.path.join(data_root, 'annotation', 'training' if is_training else 'test')
 
         self.image_list = os.listdir(self.image_root)
-
-        self.image_list = list(filter(lambda img: img.replace('.tif', '') not in ignore_list, self.image_list))
         self.annotation_lists = {
             key: [
                 img_name.replace('-', f'-{key}-') for img_name in self.image_list
