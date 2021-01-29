@@ -18,9 +18,11 @@ class Eco2018(RootDataset):
             data_root='data/Eco2018',
             is_training=True,
             # ???
-            transform=True):
+            transform=True,
+            normalize=True):
 
-        super().__init__(transform)
+        # TODO mean, std
+        super().__init__(transform, normalize, mean=(0, 0, 0), std=(0, 0, 0))
         self.data_root = data_root
         self.is_training = is_training
 
@@ -101,7 +103,7 @@ if __name__ == '__main__':
         data_root='data/Eco2018-Test',
         # ignore_list='./ignore_list.txt',
         is_training=True,
-        transform=True
+        normalize=True
     )
 
     # img, train_mask, tr_mask, tcl_mask, radius_map, sin_map, cos_map, meta = trainset[944]

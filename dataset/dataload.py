@@ -256,11 +256,21 @@ class RootInstance(object):
 
 class RootDataset(data.Dataset):
 
-    def __init__(self, transform):
+    def __init__(self, transform, normalize, mean, std):
         super().__init__()
 
         self.transform = transform
+        self._normalize = normalize
+        self._mean = mean
+        self._std = std
 
+    def _normalize_image(self, img):
+        img = img.astype(np.float32)
+        img /= 255.0
+        img -= self._mean
+        img /= self._std
+        return img
+    
     def get_polygons(self, mat_path):
         """
         .mat file parser
@@ -338,10 +348,8 @@ class RootDataset(data.Dataset):
         #     if polygon.text != '#':
         #         polygon.find_bottom_and_sideline()
 
-        # TODO mean and stds
-        if self.transform:
-            # image, polygons = self.transform(image, copy.copy(polygons))
-            pass
+        if self._normalize:
+            image = self._normalize_image(image)
 
         # tcl_mask = np.zeros(image.shape[:2], np.uint8)
         # radius_map = np.zeros(image.shape[:2], np.float32)
