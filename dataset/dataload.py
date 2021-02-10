@@ -353,21 +353,27 @@ class RootDataset(data.Dataset):
     #         self.fill_polygon(sin_map, polygon, value=sin_theta)
     #         self.fill_polygon(cos_map, polygon, value=cos_theta)
 
-    def get_training_data(self, image, polygons, image_id, image_path):
+    def get_training_data(self, masks, polygons, image_id, image_path):
+        """
+        Applies basic operations like normalization to masks['img'] and
+        prepares meta data the network needs for training.
 
-        H, W, _ = image.shape
+        :param masks: dictionary with one mask per TextSnake input
+        :param polygons: list of RootInstance object defining the roots in this masks['img']
+        """
+
+        img_height, img_width, _ = masks['img'].shape
 
         if self._normalize:
-            image = self._normalize_image(image)
+            masks['img'] = self._normalize_image(masks['img'])
 
         # train_mask = self.make_text_region(image, polygons)
         # Extracted from make_text_region. No idea what this is for
-        train_mask = np.ones(image.shape[:2], np.uint8)
+        train_mask = np.ones(masks['img'].shape[:2], np.uint8)
 
         # to pytorch channel sequence
-        image = image.transpose(2, 0, 1)
+        masks['img'] = masks['img'].transpose(2, 0, 1)
 
-        # TODO ???
         # max_annotation = max #polygons per image
         # max_points = max #points per polygons
         all_possible_points_for_each_possible_polygon = np.zeros((cfg.max_annotation, cfg.max_points, 2))
@@ -377,18 +383,24 @@ class RootDataset(data.Dataset):
             all_possible_points_for_each_possible_polygon[i, :polygon.length] = polygon.pts
             n_points_per_polygon[i] = polygon.length
 
-        # TODO
         meta = {
             'image_id': image_id,
             'image_path': image_path,
             'annotation': all_possible_points_for_each_possible_polygon,
             'n_annotation': n_points_per_polygon,
-            'Height': H,
-            'Width': W
+            'Height': img_height,
+            'Width': img_width
         }
 
-        # TODO
-        return image, train_mask, tr_mask, tcl_mask, radius_map, sin_map, cos_map, meta
+        #return masks, train_mask, tr_mask, tcl_mask, radius_map, sin_map, cos_map, meta
+        return (masks['img'],
+                train_mask,
+                masks['roots'],
+                masks['centerline'],
+                masks['radius'],
+                masks['sin'],
+                masks['cos'],
+                meta)
 
     def get_test_data(self, image, image_id, image_path):
         H, W, _ = image.shape
