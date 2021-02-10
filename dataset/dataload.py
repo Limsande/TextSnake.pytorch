@@ -255,6 +255,11 @@ class RootInstance(object):
 
 
 class RootDataset(data.Dataset):
+    """
+    Only  implements some basic features like image transformation.
+    Any subclass has to take care of loading images and calculating
+    all the input for TextSnake, like center line, root polygons etc.
+    """
 
     def __init__(self, transform, normalize, mean, std):
         super().__init__()
@@ -342,44 +347,35 @@ class RootDataset(data.Dataset):
 
     def get_training_data(self, image, polygons, image_id, image_path):
 
-        # H, W, _ = image.shape
-        #
-        # for i, polygon in enumerate(polygons):
-        #     if polygon.text != '#':
-        #         polygon.find_bottom_and_sideline()
+        H, W, _ = image.shape
 
         if self._normalize:
             image = self._normalize_image(image)
 
-        # tcl_mask = np.zeros(image.shape[:2], np.uint8)
-        # radius_map = np.zeros(image.shape[:2], np.float32)
-        # sin_map = np.zeros(image.shape[:2], np.float32)
-        # cos_map = np.zeros(image.shape[:2], np.float32)
-        #
-        # for i, polygon in enumerate(polygons):
-        #     if polygon.text != '#':
-        #         sideline1, sideline2, center_points, radius = polygon.disk_cover(n_disk=cfg.n_disk)
-        #         self.make_text_center_line(sideline1, sideline2, center_points, radius, tcl_mask, radius_map, sin_map,
-        #                                    cos_map)
-        # tr_mask, train_mask = self.make_text_region(image, polygons)
+        # train_mask = self.make_text_region(image, polygons)
+        # Extracted from make_text_region. No idea what this is for
+        train_mask = np.ones(image.shape[:2], np.uint8)
 
         # to pytorch channel sequence
         image = image.transpose(2, 0, 1)
 
         # TODO ???
-        points = np.zeros((cfg.max_annotation, cfg.max_points, 2))
-        length = np.zeros(cfg.max_annotation, dtype=int)
+        # max_annotation = max #polygons per image
+        # max_points = max #points per polygons
+        all_possible_points_for_each_possible_polygon = np.zeros((cfg.max_annotation, cfg.max_points, 2))
+        n_points_per_polygon = np.zeros(cfg.max_annotation, dtype=int)
         for i, polygon in enumerate(polygons):
             pts = polygon.points
-            points[i, :pts.shape[0]] = polygon.points
-            length[i] = pts.shape[0]
+            # pts.shape[0] = #points in this polygon
+            all_possible_points_for_each_possible_polygon[i, :pts.shape[0]] = polygon.points
+            n_points_per_polygon[i] = pts.shape[0]
 
         # TODO
         meta = {
             'image_id': image_id,
             'image_path': image_path,
-            'annotation': points,
-            'n_annotation': length,
+            'annotation': all_possible_points_for_each_possible_polygon,
+            'n_annotation': n_points_per_polygon,
             'Height': H,
             'Width': W
         }
