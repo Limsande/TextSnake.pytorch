@@ -207,13 +207,19 @@ class TextDataset(data.Dataset):
 
 
 class RootInstance(object):
+    """
+    Represents a single root as a polygon.
+    """
 
-    def __init__(self, points, orient, text):
-        self.orient = orient
-        self.text = text
-
+    def __init__(self, points: np.array):
+        """
+        :param points: Nx2 numpy array, where N is number of points
+            in this root (i.e. polygon)
+        """
         remove_points = []
 
+        # Try to reduce number of points in this polygon without
+        # loosing to much information.
         if len(points) > 4:
             # remove point if area is almost unchanged after removing it
             ori_area = cv2.contourArea(points)
@@ -228,24 +234,26 @@ class RootInstance(object):
         else:
             self.points = np.array(points)
 
-    def find_bottom_and_sideline(self):
-        self.bottoms = find_bottom(self.points)  # find two bottoms of this Text
-        self.e1, self.e2 = find_long_edges(self.points, self.bottoms)  # find two long edge sequence
+        self.length = len(self.points)
 
-    def disk_cover(self, n_disk=15):
-        """
-        cover text region with several disks
-        :param n_disk: number of disks
-        :return:
-        """
-        inner_points1 = split_edge_seqence(self.points, self.e1, n_disk)
-        inner_points2 = split_edge_seqence(self.points, self.e2, n_disk)
-        inner_points2 = inner_points2[::-1]  # innverse one of long edge
-
-        center_points = (inner_points1 + inner_points2) / 2  # disk center
-        radii = norm2(inner_points1 - center_points, axis=1)  # disk radius
-
-        return inner_points1, inner_points2, center_points, radii
+    # def find_bottom_and_sideline(self):
+    #     self.bottoms = find_bottom(self.points)  # find two bottoms of this Text
+    #     self.e1, self.e2 = find_long_edges(self.points, self.bottoms)  # find two long edge sequence
+    #
+    # def disk_cover(self, n_disk=15):
+    #     """
+    #     cover text region with several disks
+    #     :param n_disk: number of disks
+    #     :return:
+    #     """
+    #     inner_points1 = split_edge_seqence(self.points, self.e1, n_disk)
+    #     inner_points2 = split_edge_seqence(self.points, self.e2, n_disk)
+    #     inner_points2 = inner_points2[::-1]  # innverse one of long edge
+    #
+    #     center_points = (inner_points1 + inner_points2) / 2  # disk center
+    #     radii = norm2(inner_points1 - center_points, axis=1)  # disk radius
+    #
+    #     return inner_points1, inner_points2, center_points, radii
 
     def __repr__(self):
         return str(self.__dict__)
@@ -276,27 +284,27 @@ class RootDataset(data.Dataset):
         img /= self._std
         return img
     
-    def get_polygons(self, mat_path):
-        """
-        .mat file parser
-        :param mat_path: (str), mat file path
-        :return: (list), RootInstance
-        """
-        annot = io.loadmat(mat_path)
-        polygon = []
-        for cell in annot['polygt']:
-            x = cell[1][0]
-            y = cell[3][0]
-            text = cell[4][0]
-            if len(x) < 4:  # too few points
-                continue
-            try:
-                ori = cell[5][0]
-            except:
-                ori = 'c'
-            pts = np.stack([x, y]).T.astype(np.int32)
-            polygon.append(RootInstance(pts, ori, text))
-        return polygon
+    # def get_polygons(self, mat_path):
+    #     """
+    #     .mat file parser
+    #     :param mat_path: (str), mat file path
+    #     :return: (list), RootInstance
+    #     """
+    #     annot = io.loadmat(mat_path)
+    #     polygon = []
+    #     for cell in annot['polygt']:
+    #         x = cell[1][0]
+    #         y = cell[3][0]
+    #         text = cell[4][0]
+    #         if len(x) < 4:  # too few points
+    #             continue
+    #         try:
+    #             ori = cell[5][0]
+    #         except:
+    #             ori = 'c'
+    #         pts = np.stack([x, y]).T.astype(np.int32)
+    #         polygon.append(RootInstance(pts, ori, text))
+    #     return polygon
 
     # def make_text_region(self, image, polygons):
     #
@@ -365,10 +373,9 @@ class RootDataset(data.Dataset):
         all_possible_points_for_each_possible_polygon = np.zeros((cfg.max_annotation, cfg.max_points, 2))
         n_points_per_polygon = np.zeros(cfg.max_annotation, dtype=int)
         for i, polygon in enumerate(polygons):
-            pts = polygon.points
-            # pts.shape[0] = #points in this polygon
-            all_possible_points_for_each_possible_polygon[i, :pts.shape[0]] = polygon.points
-            n_points_per_polygon[i] = pts.shape[0]
+            # polygon.length = #points in this polygon
+            all_possible_points_for_each_possible_polygon[i, :polygon.length] = polygon.pts
+            n_points_per_polygon[i] = polygon.length
 
         # TODO
         meta = {

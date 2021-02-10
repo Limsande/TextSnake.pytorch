@@ -1,3 +1,5 @@
+import cv2 as cv
+
 import scipy.io as io
 import numpy as np
 import os
@@ -9,9 +11,37 @@ from dataset.data_util import pil_load_img
 from dataset.dataload import RootDataset, RootInstance
 
 
+def roots_to_polygons(annotation_mask) -> [RootInstance]:
+    """
+    Extracts roots as polygons from binary annotation mask.
+    """
+
+    # cv.findContours() needs a CV_8UC1 image
+    annotation_mask = cv.cvtColor(annotation_mask, cv.COLOR_BGR2GRAY)
+
+    # Retrieval mode = cv.RETR_EXTERNAL: find outer contours only,
+    # no hierarchy established;
+    # Contour approximation method = cv.CHAIN_APPROX_SIMPLE: do not
+    # store *every* point on the contour, only important ones
+    contours, _ = cv.findContours(annotation_mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+
+    # list of contours, each is a Nx1x2 numpy array,
+    # where N is number of points. Remove intermediate
+    # dimension of length 1
+    contours = [RootInstance(points=c.squeeze()) for c in contours]
+
+    return contours
+
+
 class Eco2018(RootDataset):
     """
     Iterable to be passed into PyTorch's data.DataLoader.
+
+    This class loads the images and masks, and does all preprocessing, except standard operations
+    like normalizing. These are handled by the baseclass.
+
+    Eco2018 differs from Total-Text, because the input for TextSnake, like center lines, is already
+    present as additional image masks.
     """
     def __init__(
             self,
@@ -31,6 +61,7 @@ class Eco2018(RootDataset):
         self.annotation_root = os.path.join(data_root, 'annotation', 'training' if is_training else 'test')
 
         self.image_list = os.listdir(self.image_root)
+        # One list per image with names of root mask, centerline mask, etc.
         self.annotation_lists = {
             key: [
                 img_name.replace('-', f'-{key}-') for img_name in self.image_list
@@ -45,17 +76,16 @@ class Eco2018(RootDataset):
         image = pil_load_img(image_path)
 
         # Read annotation
-        res = [image]
+        input_data = {'img': image}
         for annotation_name in self._annotation_names:
             annotation_id = self.annotation_lists[annotation_name][item]
             annotation_path = os.path.join(self.annotation_root, annotation_id)
-            res.append(pil_load_img(annotation_path))
+            input_data[annotation_name] = pil_load_img(annotation_path)
 
+        polygons = roots_to_polygons(input_data['roots'])
         # TODO dafuq is train_mask ?!
         # image, train_mask, tr_mask, tcl_mask, radius_map, sin_map, cos_map, meta
-        # return self.get_training_data(image, polygons, image_id=image_id, image_path=image_path)
-
-        return res
+        return self.get_training_data(input_data, polygons, image_id=image_id, image_path=image_path)
 
     def __len__(self):
         return len(self.image_list)
