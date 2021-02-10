@@ -380,7 +380,7 @@ class RootDataset(data.Dataset):
         n_points_per_polygon = np.zeros(cfg.max_annotation, dtype=int)
         for i, polygon in enumerate(polygons):
             # polygon.length = #points in this polygon
-            all_possible_points_for_each_possible_polygon[i, :polygon.length] = polygon.pts
+            all_possible_points_for_each_possible_polygon[i, :polygon.length] = polygon.points
             n_points_per_polygon[i] = polygon.length
 
         meta = {
