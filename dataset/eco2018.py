@@ -17,7 +17,6 @@ class Eco2018(RootDataset):
             self,
             data_root='data/Eco2018',
             is_training=True,
-            # ???
             transform=True,
             normalize=True):
 
@@ -37,27 +36,6 @@ class Eco2018(RootDataset):
                 img_name.replace('-', f'-{key}-') for img_name in self.image_list
             ] for key in self._annotation_names}
 
-    # def get_polygons(self, mat_path):
-    #     """
-    #     .mat file parser
-    #     :param mat_path: (str), mat file path
-    #     :return: (list), TextInstance
-    #     """
-    #     annot = io.loadmat(mat_path)
-    #     polygons = []
-    #     for cell in annot['polygt']:
-    #         x = cell[1][0]
-    #         y = cell[3][0]
-    #         text = cell[4][0] if len(cell[4]) > 0 else '#'
-    #         ori = cell[5][0] if len(cell[5]) > 0 else 'c'
-    #
-    #         if len(x) < 4:  # too few points
-    #             continue
-    #         pts = np.stack([x, y]).T.astype(np.int32)
-    #         polygons.append(RootInstance(pts, ori, text))
-    #
-    #     return polygons
-
     def __getitem__(self, item):
 
         image_id = self.image_list[item]
@@ -73,10 +51,6 @@ class Eco2018(RootDataset):
             annotation_path = os.path.join(self.annotation_root, annotation_id)
             res.append(pil_load_img(annotation_path))
 
-        # for i, polygon in enumerate(polygons):
-        #     if polygon.text != '#':
-        #         polygon.find_bottom_and_sideline()
-        #
         # TODO dafuq is train_mask ?!
         # image, train_mask, tr_mask, tcl_mask, radius_map, sin_map, cos_map, meta
         # return self.get_training_data(image, polygons, image_id=image_id, image_path=image_path)
