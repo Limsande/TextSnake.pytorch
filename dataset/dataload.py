@@ -264,26 +264,15 @@ class RootInstance(object):
 
 class RootDataset(data.Dataset):
     """
-    Only  implements some basic features like image transformation.
-    Any subclass has to take care of loading images and calculating
-    all the input for TextSnake, like center line, root polygons etc.
+    Only  implements some basic preparations to put images into the neural net.
+    Any subclass has to take care of loading images and calculating all the input
+    for TextSnake, like center line, root polygons etc. as well as applying
+    augmentation.
     """
 
-    def __init__(self, transform, normalize, mean, std):
+    def __init__(self):
         super().__init__()
 
-        self.transform = transform
-        self._normalize = normalize
-        self._mean = mean
-        self._std = std
-
-    def _normalize_image(self, img):
-        img = img.astype(np.float32)
-        img /= 255.0
-        img -= self._mean
-        img /= self._std
-        return img
-    
     # def get_polygons(self, mat_path):
     #     """
     #     .mat file parser
@@ -355,17 +344,13 @@ class RootDataset(data.Dataset):
 
     def get_training_data(self, masks, polygons, image_id, image_path):
         """
-        Applies basic operations like normalization to masks['img'] and
-        prepares meta data the network needs for training.
+        Prepares meta data the network needs for training.
 
-        :param masks: dictionary with one mask per TextSnake input
+        :param masks: dictionary with input image and one mask per TextSnake input
         :param polygons: list of RootInstance object defining the roots in this masks['img']
         """
 
         img_height, img_width, _ = masks['img'].shape
-
-        if self._normalize:
-            masks['img'] = self._normalize_image(masks['img'])
 
         # train_mask = self.make_text_region(image, polygons)
         # Extracted from make_text_region. No idea what this is for
@@ -376,7 +361,9 @@ class RootDataset(data.Dataset):
 
         # max_annotation = max #polygons per image
         # max_points = max #points per polygons
-        all_possible_points_for_each_possible_polygon = np.zeros((cfg.max_annotation, cfg.max_points, 2))
+        #all_possible_points_for_each_possible_polygon = np.zeros((cfg.max_annotation, cfg.max_points, 2))
+        max_points = max([p.length for p in polygons])
+        all_possible_points_for_each_possible_polygon = np.zeros((cfg.max_annotation, max_points, 2))
         n_points_per_polygon = np.zeros(cfg.max_annotation, dtype=int)
         for i, polygon in enumerate(polygons):
             # polygon.length = #points in this polygon

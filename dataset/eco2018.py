@@ -16,9 +16,6 @@ def roots_to_polygons(annotation_mask) -> [RootInstance]:
     Extracts roots as polygons from binary annotation mask.
     """
 
-    # cv.findContours() needs a CV_8UC1 image
-    annotation_mask = cv.cvtColor(annotation_mask, cv.COLOR_BGR2GRAY)
-
     # Retrieval mode = cv.RETR_EXTERNAL: find outer contours only,
     # no hierarchy established;
     # Contour approximation method = cv.CHAIN_APPROX_SIMPLE: do not
@@ -47,13 +44,12 @@ class Eco2018(RootDataset):
             self,
             data_root='data/Eco2018',
             is_training=True,
-            transform=True,
-            normalize=True):
+            transformations=None):
 
-        # TODO mean, std
-        super().__init__(transform, normalize, mean=(0, 0, 0), std=(0, 0, 0))
+        super().__init__()
         self.data_root = data_root
         self.is_training = is_training
+        self.transformations = transformations
 
         self._annotation_names = ['roots', 'centerline', 'radius', 'sin', 'cos']
 
@@ -75,17 +71,21 @@ class Eco2018(RootDataset):
         # Read image data
         image = pil_load_img(image_path)
 
-        # Read annotation
-        input_data = {'img': image}
+        # Read annotations and build a dict with them
+        img_and_masks = {'img': image}
         for annotation_name in self._annotation_names:
             annotation_id = self.annotation_lists[annotation_name][item]
             annotation_path = os.path.join(self.annotation_root, annotation_id)
-            input_data[annotation_name] = pil_load_img(annotation_path)
+            img_and_masks[annotation_name] = pil_load_img(annotation_path)
 
-        polygons = roots_to_polygons(input_data['roots'])
+        # Apply augmentations to image and masks
+        if self.transformations:
+            img_and_masks = self.transformations(img_and_masks)
+
+        polygons = roots_to_polygons(img_and_masks['roots'])
         # TODO dafuq is train_mask ?!
         # image, train_mask, tr_mask, tcl_mask, radius_map, sin_map, cos_map, meta
-        return self.get_training_data(input_data, polygons, image_id=image_id, image_path=image_path)
+        return self.get_training_data(img_and_masks, polygons, image_id=image_id, image_path=image_path)
 
     def __len__(self):
         return len(self.image_list)
@@ -93,21 +93,18 @@ class Eco2018(RootDataset):
 
 if __name__ == '__main__':
     import os
-    from util.augmentation import BaseTransform, Augmentation
+    from util.augmentation import RootAugmentation
 
     # TODO
-    #means = (0.485, 0.456, 0.406)
-    #stds = (0.229, 0.224, 0.225)
+    means = (0.485, 0.456, 0.406)
+    stds = (0.229, 0.224, 0.225)
 
-    # transform = Augmentation(
-    #     size=512, mean=means, std=stds
-    # )
+    transformations = RootAugmentation(mean=means, std=stds)
 
     trainset = Eco2018(
         data_root='data/Eco2018-Test',
-        # ignore_list='./ignore_list.txt',
         is_training=True,
-        normalize=True
+        transformations=transformations
     )
 
     # img, train_mask, tr_mask, tcl_mask, radius_map, sin_map, cos_map, meta = trainset[944]
@@ -120,7 +117,7 @@ if __name__ == '__main__':
         # print(idx, img.shape)
         maps = [map for map in trainset[idx]]
         fig, axs = plt.subplots(3, 2)
-        for i, map in enumerate(maps):
+        for i, map in enumerate(maps[:-1]):
             axs[int(i / 2)][(i % 2)].imshow(map)
             axs[int(i / 2)][(i % 2)].set_title(titles[i])
         plt.show()

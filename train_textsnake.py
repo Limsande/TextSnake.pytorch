@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 from datetime import datetime
 
@@ -14,7 +15,7 @@ from dataset.synth_text import SynthText
 from dataset.eco2018 import Eco2018
 from network.loss import TextLoss
 from network.textnet import TextNet
-from util.augmentation import BaseTransform, Augmentation
+from util.augmentation import BaseTransform, Augmentation, RootAugmentation, RootBaseTransform
 from util.config import config as cfg, update_config, print_config
 from util.misc import AverageMeter
 from util.misc import mkdirs, to_device
@@ -187,12 +188,18 @@ def main():
         )
         valset = None
     elif cfg.dataset == 'eco2018':
-        trainset = Eco2018(is_training=True)
+        trainset = Eco2018(
+            is_training=True,
+            transformations=RootAugmentation(mean=cfg.means, std=cfg.stds)
+        )
 
         # TODO wie zwischen val und test unterscheiden ?!
-        valset = Eco2018(is_training=False)
+        valset = Eco2018(
+            is_training=False,
+            transformations=RootBaseTransform(mean=cfg.means, std=cfg.stds)
+        )
     else:
-        pass
+        sys.exit(f'Unknown dataset: {cfg.dataset}')
 
     train_loader = data.DataLoader(trainset, batch_size=cfg.batch_size, shuffle=True, num_workers=cfg.num_workers)
     if valset:

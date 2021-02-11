@@ -92,7 +92,7 @@ class Rotate(object):
     def __init__(self, up=30):
         self.up = up
 
-    def rotate(self, center, pt, theta):  # 二维图形学的旋转
+    def rotate(self, center, pt, theta):  # 二维图形学的旋转 Rotation of 2D graphics
         xr, yr = center
         yr = -yr
         x, y = pt[:, 0], pt[:, 1]
@@ -337,3 +337,121 @@ class BaseTransform(object):
 
     def __call__(self, image, polygons=None):
         return self.augmentation(image, polygons)
+
+
+class RootCompose(object):
+    """
+    Composes several augmentations together.
+    """
+
+    def __init__(self, transforms):
+        self.transforms = transforms
+
+    def __call__(self, img_and_masks):
+        for t in self.transforms:
+            img_and_masks = t(img_and_masks)
+        return img_and_masks
+
+
+class RootAugmentation(object):
+    """
+    Container for several augmentations applied to a collection
+    of an image and its annotation masks when called.
+    """
+
+    def __init__(self, mean, std):
+        self.mean = mean
+        self.std = std
+        self.augmentation = RootCompose([
+            RootRandomMirror(),
+            RootRandomRotate(),
+            RootNormalize(mean, std)
+        ])
+
+    def __call__(self, img_and_masks):
+        return self.augmentation(img_and_masks)
+
+
+class RootBaseTransform(object):
+    """
+    Container for normalization applied to a collection
+    of an image and its annotation masks when called,
+    see RootNormalize.
+    """
+    def __init__(self, mean, std):
+        self.mean = mean
+        self.std = std
+        self.augmentation = Compose([
+            RootNormalize(mean, std)
+        ])
+
+    def __call__(self, img_and_masks):
+        return self.augmentation(img_and_masks)
+
+
+class RootRandomMirror(object):
+    """
+    Mirrors input images with probability of 0.5.
+    """
+
+    def __init__(self):
+        pass
+
+    def __call__(self, img_and_masks):
+        if np.random.randint(2):
+            for key in img_and_masks.keys():
+                img_and_masks[key] = np.ascontiguousarray(img_and_masks[key][:, ::-1])
+        return img_and_masks
+
+
+class RootRandomRotate(object):
+    """
+    Rotates input images with probability of 0.5.
+    """
+
+    def __init__(self, up=30):
+        self.up = up
+
+    def rotate(self, center, pt, theta):  # Rotation of 2D graphics
+        xr, yr = center
+        yr = -yr
+        x, y = pt[:, 0], pt[:, 1]
+        y = -y
+
+        theta = theta / 360 * 2 * math.pi
+        cos = math.cos(theta)
+        sin = math.sin(theta)
+
+        _x = xr + (x - xr) * cos - (y - yr) * sin
+        _y = yr + (x - xr) * sin + (y - yr) * cos
+
+        return _x, -_y
+
+    def __call__(self, img_and_masks):
+        if np.random.randint(2):
+            return img_and_masks
+
+        angle = np.random.uniform(-self.up, self.up)  #
+        rows, cols = img_and_masks['img'].shape[0:2]
+        M = cv2.getRotationMatrix2D((cols / 2, rows / 2), angle, 1.0)
+        for key in img_and_masks.keys():
+            img_and_masks[key] = cv2.warpAffine(img_and_masks[key], M, (cols, rows), borderValue=[0, 0, 0])
+        return img_and_masks
+
+
+class RootNormalize(object):
+    """
+    Normalizes image with key 'img' in input dictionary.
+    """
+
+    def __init__(self, mean, std):
+        self.mean = np.array(mean)
+        self.std = np.array(std)
+
+    def __call__(self, img_and_masks):
+        image = img_and_masks['img'].astype(np.float32)
+        image /= 255.0
+        image -= self.mean
+        image /= self.std
+        img_and_masks['img'] = image
+        return img_and_masks
