@@ -110,13 +110,14 @@ if __name__ == '__main__':
     # img, train_mask, tr_mask, tcl_mask, radius_map, sin_map, cos_map, meta = trainset[944]
 
     import matplotlib.pyplot as plt
-    titles = ['image']
+    titles = ['image', 'train_mask']
     titles.extend(trainset._annotation_names)
     for idx in range(0, len(trainset)):
         # img, tr_mask, tcl_mask, radius_map, sin_map, cos_map = trainset[idx]
         # print(idx, img.shape)
         maps = [map for map in trainset[idx]]
-        fig, axs = plt.subplots(3, 2)
+        maps[0] = np.moveaxis(maps[0], 0, 2)
+        fig, axs = plt.subplots(4, 2)
         for i, map in enumerate(maps[:-1]):
             axs[int(i / 2)][(i % 2)].imshow(map)
             axs[int(i / 2)][(i % 2)].set_title(titles[i])
