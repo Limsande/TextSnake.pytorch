@@ -16,6 +16,11 @@ def roots_to_polygons(annotation_mask) -> [RootInstance]:
     Extracts roots as polygons from binary annotation mask.
     """
 
+    # With given options, cv.findContours() only supports uint8 input.
+    if annotation_mask.dtype is not np.uint8:
+        annotation_mask = annotation_mask * 255
+        annotation_mask = annotation_mask.astype(np.uint8)
+
     # Retrieval mode = cv.RETR_EXTERNAL: find outer contours only,
     # no hierarchy established;
     # Contour approximation method = cv.CHAIN_APPROX_SIMPLE: do not
