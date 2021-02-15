@@ -113,7 +113,7 @@ if __name__ == '__main__':
     titles = ['image', 'train_mask']
     titles.extend(trainset._annotation_names)
     for idx in range(0, len(trainset)):
-        # img, tr_mask, tcl_mask, radius_map, sin_map, cos_map = trainset[idx]
+        img, train_mask, tr_mask, tcl_mask, radius_map, sin_map, cos_map, meta = trainset[idx]
         # print(idx, img.shape)
         maps = [map for map in trainset[idx]]
         maps[0] = np.moveaxis(maps[0], 0, 2)
@@ -122,3 +122,11 @@ if __name__ == '__main__':
             axs[int(i / 2)][(i % 2)].imshow(map)
             axs[int(i / 2)][(i % 2)].set_title(titles[i])
         plt.show()
+
+        print('Image:', idx, img.shape)
+        print('Train mask:', train_mask.shape, train_mask.dtype, train_mask.min(), train_mask.max())
+        print('TR mask:', tr_mask.shape, tr_mask.dtype, tr_mask.min(), tr_mask.max())
+        print('TCL mask:', tcl_mask.shape, tcl_mask.dtype, tcl_mask.min(), tcl_mask.max())
+        print('Radius map:', radius_map.shape, radius_map.dtype, radius_map.min(), radius_map.max())
+        print('Sin map:', sin_map.shape, sin_map.dtype, sin_map.min(), sin_map.max())
+        print('Cos map:', cos_map.shape, cos_map.dtype, cos_map.min(), cos_map.max())
