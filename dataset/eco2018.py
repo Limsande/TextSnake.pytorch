@@ -53,8 +53,8 @@ class Eco2018(RootDataset):
 
         self._annotation_names = ['roots', 'centerline', 'radius', 'sin', 'cos']
 
-        self.image_root = os.path.join(data_root, 'images', 'training' if is_training else 'test')
-        self.annotation_root = os.path.join(data_root, 'annotation', 'training' if is_training else 'test')
+        self.image_root = os.path.join(data_root, 'images', 'training' if is_training else 'validation')
+        self.annotation_root = os.path.join(data_root, 'annotation', 'training' if is_training else 'validation')
 
         self.image_list = os.listdir(self.image_root)
         # One list per image with names of root mask, centerline mask, etc.
