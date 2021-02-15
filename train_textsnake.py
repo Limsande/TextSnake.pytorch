@@ -71,6 +71,7 @@ def train(model, train_loader, criterion, scheduler, optimizer, epoch, logger):
             img, train_mask, tr_mask, tcl_mask, radius_map, sin_map, cos_map)
 
         output = model(img)
+
         tr_loss, tcl_loss, sin_loss, cos_loss, radii_loss = \
             criterion(output, tr_mask, tcl_mask, sin_map, cos_map, radius_map, train_mask)
         loss = tr_loss + tcl_loss + sin_loss + cos_loss + radii_loss
@@ -190,13 +191,13 @@ def main():
     elif cfg.dataset == 'eco2018':
         trainset = Eco2018(
             is_training=True,
-            transformations=RootAugmentation(mean=cfg.means, std=cfg.stds)
+            transformations=RootAugmentation(mean=cfg.means, std=cfg.stds, pad_size=512)
         )
 
         # TODO wie zwischen val und test unterscheiden ?!
         valset = Eco2018(
             is_training=False,
-            transformations=RootBaseTransform(mean=cfg.means, std=cfg.stds)
+            transformations=RootBaseTransform(mean=cfg.means, std=cfg.stds, pad_size=512)
         )
     else:
         sys.exit(f'Unknown dataset: {cfg.dataset}')

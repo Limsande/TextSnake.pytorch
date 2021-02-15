@@ -359,10 +359,11 @@ class RootAugmentation(object):
     of an image and its annotation masks when called.
     """
 
-    def __init__(self, mean, std):
+    def __init__(self, mean, std, pad_size=512):
         self.mean = mean
         self.std = std
         self.augmentation = RootCompose([
+            RootPadding(pad_size),
             RootRandomMirror(),
             RootRandomRotate(),
             RootNormalize(mean, std)
@@ -374,19 +375,52 @@ class RootAugmentation(object):
 
 class RootBaseTransform(object):
     """
-    Container for normalization applied to a collection
-    of an image and its annotation masks when called,
-    see RootNormalize.
+    Container for normalization and padding applied to a collection
+    of an image and its annotation masks when called, see RootNormalize.
     """
-    def __init__(self, mean, std):
+    def __init__(self, mean, std, pad_size=512):
         self.mean = mean
         self.std = std
-        self.augmentation = Compose([
+        self.augmentation = RootCompose([
+            RootPadding(pad_size),
             RootNormalize(mean, std)
         ])
 
     def __call__(self, img_and_masks):
         return self.augmentation(img_and_masks)
+
+
+class RootPadding(object):
+    """
+    Surrounds squared images smaller then pad_size x pad_size with zeros.
+    Resulting images have dimensions pad_size x pad_size.
+    """
+    def __init__(self, pad_size):
+        self.pad_size = pad_size
+
+    def __call__(self, img_and_masks):
+        if not img_and_masks['img'].shape[0] < self.pad_size:
+            return img_and_masks
+
+        for key in img_and_masks.keys():
+            img = img_and_masks[key]
+
+            if img.ndim > 2:
+                dims = (self.pad_size, self.pad_size, img.shape[2])
+            else:
+                dims = (self.pad_size, self.pad_size)
+
+            padded_img = np.zeros(dims, dtype=img.dtype)
+
+            top_left_x = (self.pad_size - img.shape[1]) // 2
+            top_left_y = (self.pad_size - img.shape[0]) // 2
+            for y in range(img.shape[0]):
+                for x in range(img.shape[1]):
+                    padded_img[top_left_y + y][top_left_x + x] = img[y][x]
+
+            img_and_masks[key] = padded_img
+
+        return img_and_masks
 
 
 class RootRandomMirror(object):
@@ -454,4 +488,5 @@ class RootNormalize(object):
         image -= self.mean
         image /= self.std
         img_and_masks['img'] = image
+
         return img_and_masks
