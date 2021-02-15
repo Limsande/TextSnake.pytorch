@@ -1,10 +1,8 @@
-import cv2 as cv
-
-import scipy.io as io
-import numpy as np
-import os
-
 import sys
+
+import cv2 as cv
+import numpy as np
+
 sys.path.append('.')
 
 from dataset.data_util import pil_load_img
@@ -39,8 +37,9 @@ class Eco2018(RootDataset):
     """
     Iterable to be passed into PyTorch's data.DataLoader.
 
-    This class loads the images and masks, and does all preprocessing, except standard operations
-    like normalizing. These are handled by the baseclass.
+    This class loads the images and masks, and extracts root polygons from the binary annotation
+    mask (we must feed these into the net). Additional stuff like image type conversions etc.
+    is handled by the baseclass.
 
     Eco2018 differs from Total-Text, because the input for TextSnake, like center lines, is already
     present as additional image masks.
@@ -62,7 +61,7 @@ class Eco2018(RootDataset):
         self.annotation_root = os.path.join(data_root, 'annotation', 'training' if is_training else 'validation')
 
         self.image_list = os.listdir(self.image_root)
-        # One list per image with names of root mask, centerline mask, etc.
+        # One list per image with names of root mask, center line mask, etc.
         self.annotation_lists = {
             key: [
                 img_name.replace('-', f'-{key}-') for img_name in self.image_list
@@ -88,7 +87,7 @@ class Eco2018(RootDataset):
             img_and_masks = self.transformations(img_and_masks)
 
         polygons = roots_to_polygons(img_and_masks['roots'])
-        # TODO dafuq is train_mask ?!
+
         # image, train_mask, tr_mask, tcl_mask, radius_map, sin_map, cos_map, meta
         return self.get_training_data(img_and_masks, polygons, image_id=image_id, image_path=image_path)
 
