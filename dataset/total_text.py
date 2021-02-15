@@ -90,4 +90,10 @@ if __name__ == '__main__':
 
     for idx in range(0, len(trainset)):
         img, train_mask, tr_mask, tcl_mask, radius_map, sin_map, cos_map, meta = trainset[idx]
-        print(idx, img.shape)
+        print('Image:', idx, img.shape)
+        print('Train mask:', train_mask.shape, train_mask.dtype)
+        print('TR mask:', tr_mask.shape, tr_mask.dtype)
+        print('TCL mask:', tcl_mask.shape, tcl_mask.dtype)
+        print('Radius map:', radius_map.shape, radius_map.dtype)
+        print('Sin map:', sin_map.shape, sin_map.dtype)
+        print('Cos map:', cos_map.shape, cos_map.dtype)
