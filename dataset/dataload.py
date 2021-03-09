@@ -290,14 +290,14 @@ class RootDataset(data.Dataset):
         #   Radius map: float32
         #   Sin map: float32, -1.0 to 1.0
         #   Cos map: float32, -1.0 to 1.0
-        for mask in [img_and_masks['roots'], img_and_masks['centerline']]:
+        for mask in [img_and_masks['roots'], img_and_masks['centerlines']]:
             if mask.max() > 1:
                 # Store result of array division in int array
                 # without type conversions.
                 # See https://github.com/numpy/numpy/issues/17221
                 np.divide(mask, 255, out=mask, casting='unsafe')
 
-        img_and_masks['radius'] = img_and_masks['radius'].astype(np.float32)
+        img_and_masks['radii'] = img_and_masks['radii'].astype(np.float32)
 
         # Map [0, 255] to [-1, 1]
         for key in ['sin', 'cos']:
@@ -319,8 +319,8 @@ class RootDataset(data.Dataset):
         return (img_and_masks['img'],
                 train_mask,
                 img_and_masks['roots'],
-                img_and_masks['centerline'],
-                img_and_masks['radius'],
+                img_and_masks['centerlines'],
+                img_and_masks['radii'],
                 img_and_masks['sin'],
                 img_and_masks['cos'],
                 meta)
