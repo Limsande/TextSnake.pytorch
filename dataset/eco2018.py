@@ -100,9 +100,10 @@ if __name__ == '__main__':
     import os
     from util.augmentation import RootAugmentation
 
-    # TODO
-    means = (0.485, 0.456, 0.406)
-    stds = (0.229, 0.224, 0.225)
+    # Mean: 77.12583122033104 69.66186087747802 65.88590173118982
+    # Std: 9.664289791969221 8.175145880877395 7.81001608502447
+    means = (77.125, 69.661, 65.885)
+    stds = (9.664, 8.175, 7.810)
 
     transformations = RootAugmentation(mean=means, std=stds)
 
