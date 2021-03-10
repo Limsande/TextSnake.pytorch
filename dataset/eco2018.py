@@ -42,6 +42,20 @@ class Eco2018(RootDataset):
     mask (we must feed these into the net). Additional stuff like image type conversions etc.
     is handled by the baseclass.
 
+    Input is expected to follow this structure:
+
+        ./data
+            \ Eco2018
+                \ annotation
+                    \ training
+                        \ roots
+                        \ ...
+                    \ validation
+                        \ ...
+                \ images
+                    \ training
+                    \ validation
+
     Eco2018 differs from Total-Text, because the input for TextSnake, like center lines, is already
     present as additional image masks.
     """
@@ -80,7 +94,7 @@ class Eco2018(RootDataset):
         img_and_masks = {'img': image}
         for annotation_name in self._annotation_names:
             annotation_id = self.annotation_lists[annotation_name][item]
-            annotation_path = os.path.join(self.annotation_root, annotation_id)
+            annotation_path = os.path.join(self.annotation_root, annotation_name, annotation_id)
             img_and_masks[annotation_name] = pil_load_img(annotation_path)
 
         # Apply augmentations to image and masks
