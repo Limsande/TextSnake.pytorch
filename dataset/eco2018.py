@@ -3,11 +3,24 @@ import sys
 
 import cv2 as cv
 import numpy as np
+import torch
 
 sys.path.append('.')
 
 from dataset.data_util import pil_load_img
 from dataset.dataload import RootDataset, RootInstance
+
+
+def root_collate_fn(batch):
+    img = torch.stack([torch.from_numpy(item[0]) for item in batch], 0)
+    train_mask = torch.stack([torch.from_numpy(item[1]) for item in batch], 0)
+    tr_mask = torch.stack([torch.from_numpy(item[2]) for item in batch], 0)
+    tcl_mask = torch.stack([torch.from_numpy(item[3]) for item in batch], 0)
+    radius_map = torch.stack([torch.from_numpy(item[4]) for item in batch], 0)
+    sin_map = torch.stack([torch.from_numpy(item[5]) for item in batch], 0)
+    cos_map = torch.stack([torch.from_numpy(item[6]) for item in batch], 0)
+    meta = [item[7] for item in batch]
+    return [img, train_mask, tr_mask, tcl_mask, radius_map, sin_map, cos_map, meta]
 
 
 def roots_to_polygons(annotation_mask) -> [RootInstance]:

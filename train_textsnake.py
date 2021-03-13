@@ -12,7 +12,7 @@ from util.shedule import FixLR
 
 from dataset.total_text import TotalText
 from dataset.synth_text import SynthText
-from dataset.eco2018 import Eco2018
+from dataset.eco2018 import Eco2018, root_collate_fn
 from network.loss import TextLoss
 from network.textnet import TextNet
 from util.augmentation import BaseTransform, Augmentation, RootAugmentation, RootBaseTransform
@@ -202,9 +202,21 @@ def main():
     else:
         sys.exit(f'Unknown dataset: {cfg.dataset}')
 
-    train_loader = data.DataLoader(trainset, batch_size=cfg.batch_size, shuffle=True, num_workers=cfg.num_workers)
+    train_loader = data.DataLoader(
+        trainset,
+        batch_size=cfg.batch_size,
+        shuffle=True,
+        num_workers=cfg.num_workers,
+        collate_fn=root_collate_fn
+    )
     if valset:
-        val_loader = data.DataLoader(valset, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_workers)
+        val_loader = data.DataLoader(
+            valset,
+            batch_size=cfg.batch_size,
+            shuffle=False,
+            num_workers=cfg.num_workers,
+            collate_fn=root_collate_fn
+        )
     else:
         valset = None
 
