@@ -61,7 +61,7 @@ class Eco2018(RootDataset):
     """
     def __init__(
             self,
-            data_root='data/Eco2018',
+            data_root='data/Eco2018-Test',
             is_training=True,
             transformations=None):
 
